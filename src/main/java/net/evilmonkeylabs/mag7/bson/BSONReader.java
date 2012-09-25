@@ -7,6 +7,7 @@ import net.evilmonkeylabs.mag7.bson.io.BSONByteBuffer;
 import net.evilmonkeylabs.mag7.bson.types.BSONTimestamp;
 import net.evilmonkeylabs.mag7.bson.types.Code;
 import net.evilmonkeylabs.mag7.bson.types.CodeWScope;
+import net.evilmonkeylabs.mag7.bson.types.ObjectID;
 
 import java.nio.ByteBuffer;
 import java.util.Date;
@@ -85,6 +86,7 @@ public abstract class BSONReader<T> {
             case BSON.OBJECTID:
                 // OIDs are stored as Big Endian
                 // TODO - ObjectID Implementation
+                b.put(name, new ObjectID( buf.getIntBE(), buf.getIntBE(), buf.getIntBE() ));
                 break;
             case BSON.BOOLEAN:
                 switch (buf.get()) {
@@ -110,7 +112,7 @@ public abstract class BSONReader<T> {
             case BSON.DBREF:
                 // TODO - parse.. CString (NS) then OID
                 throw new UnsupportedOperationException("DBRef not yet supported");
-                break;
+                //break;
             case BSON.JSCODE:
                 b.put(name, new Code(buf.getUTF8String()));
                 break;
