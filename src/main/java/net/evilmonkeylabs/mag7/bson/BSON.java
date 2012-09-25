@@ -1,8 +1,5 @@
 package net.evilmonkeylabs.mag7.bson;
 
-
-import sun.io.ByteToCharEUC_JP_Solaris;
-
 public class BSON {
 
     public static final byte EOO = 0x00;
@@ -17,7 +14,7 @@ public class BSON {
     public static final byte UTC_DATETIME = 0x09;
     public static final byte NULL = 0x0A;
     public static final byte REGEX = 0x0B;
-    public static final byte DBPOINTER = 0x0C;
+    public static final byte DBREF = 0x0C;
     public static final byte JSCODE = 0x0D;
     public static final byte SYMBOL = 0x0E;
     public static final byte JSCODE_W_SCOPE = 0x0F;
@@ -48,7 +45,7 @@ public class BSON {
         UTC_DATETIME(0x09),
         NULL(0x0A),
         REGEX(0x0B),
-        DBPOINTER(0x0C), // deprecated
+        DBREF(0x0C), // deprecated
         JSCODE(0x0D),
         SYMBOL(0x0E), // deprecated
         JSCODE_W_SCOPE(0x0F),
@@ -91,6 +88,25 @@ public class BSON {
         }
     }
 
+    public static class MinKey {
+        private static MinKey ourInstance = new MinKey();
+
+        public static MinKey getInstance() {
+            return ourInstance;
+        }
+
+        private MinKey() { }
+    }
+
+    public static class MaxKey {
+        private static MaxKey ourInstance = new MaxKey();
+
+        public static MaxKey getInstance() {
+            return ourInstance;
+        }
+
+        private MaxKey() { }
+    }
 
     // todo regex
 }

@@ -198,6 +198,10 @@ public class BSONByteBuffer {
         return getInt(0);
     }
 
+    public ByteBuffer slice() {
+        return buf.slice();
+    }
+
     protected ByteBuffer buf;
 
 }

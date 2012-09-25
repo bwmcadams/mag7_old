@@ -1,8 +1,11 @@
 package net.evilmonkeylabs.mag7.bson;
 
 import net.evilmonkeylabs.mag7.bson.doc.BSONDocumentBuilder;
+import net.evilmonkeylabs.mag7.bson.doc.BSONList;
+import net.evilmonkeylabs.mag7.bson.io.BSONByteBuffer;
 
 import java.nio.ByteBuffer;
+import java.util.Date;
 
 /**
  * Copyright (c) 2008 - 2012 10gen, Inc. <http://10gen.com>
@@ -26,10 +29,133 @@ import java.nio.ByteBuffer;
  */
 public abstract class BSONReader<T> {
 
-    public DefaultBSONParser parseDocument(final ByteBuffer buf) {
-        return new DefaultBSONParser(buf);
+    public BSONReader(final ByteBuffer _buf) {
+        buf = new BSONByteBuffer(_buf);
+        len = buf.getInt();
+    }
+
+    public DefaultBSONDocParser parseDocument(final ByteBuffer buf) {
+        return new DefaultBSONDocParser(buf);
     }
 
     public abstract BSONDocumentBuilder<T> newBuilder();
 
+    protected void parse() {
+        while (parseEntry());
+        parsed = true;
+    }
+
+    protected boolean parseEntry() {
+        final byte type = buf.get();
+
+        if (type == BSON.EOO)
+            return false;
+
+        final String name = buf.getCString();
+
+        switch (type) {
+            case BSON.NULL:
+            case BSON.UNDEF:
+                b.put(name, null);
+                break;
+            case BSON.DOUBLE:
+                b.put(name, buf.getDouble());
+                break;
+            case BSON.STRING:
+                b.put(name, buf.getUTF8String());
+                break;
+            case BSON.DOCUMENT:
+                // TODO - Break out slice and reparse
+                final BSONReader<T> dP = newDocumentParser(buf.slice());
+                final T doc = dP.result();
+                b.put(name, doc);
+                break;
+            case BSON.ARRAY:
+                //  TODO - Let user specify custom list builder !!!
+                final BSONReader<BSONList> lP = new DefaultBSONArrayParser(buf.slice());
+                final BSONList list = lP.result();
+                b.put(name, list);
+                break;
+            case BSON.BINARY:
+                // TODO - Break out and parse Binary
+                break;
+            case BSON.OBJECTID:
+                // OIDs are stored as Big Endian
+                // TODO - ObjectID Implementation
+                break;
+            case BSON.BOOLEAN:
+                switch (buf.get()) {
+                    case 0x01:
+                        b.put(name, true);
+                    case 0x00:
+                    default: // fall through
+                        b.put(name, false);
+                        break;
+                }
+                break;
+            case BSON.UTC_DATETIME:
+                // TODO - Custom dates
+                long tsp = buf.getLong();
+                if (!useCustomDate)
+                    b.put(name, new Date(tsp));
+                break;
+            case BSON.REGEX:
+                // TODO - Regex Parsing
+                final String pattern = buf.getCString();
+                final String options = buf.getCString();
+                break;
+            case BSON.DBREF:
+                // TODO - parse.. CString (NS) then OID
+                break;
+            case BSON.JSCODE:
+                b.put(name, buf.getUTF8String());
+                break;
+            case BSON.JSCODE_W_SCOPE:
+                String code = buf.getUTF8String();
+                //TODO - parse out document
+                break;
+            case BSON.SYMBOL:
+                // TODO - Should we use something other than String for symbols in java?
+                b.put(name, buf.getUTF8String());
+                // TODO - Need custom hooks for Scala, Clojure
+                break;
+            case BSON.INT32:
+                b.put(name, buf.getInt());
+                break;
+            case BSON.INT64:
+                b.put(name, buf.getLong());
+                break;
+            case BSON.TIMESTAMP:
+                // Special BSON Timestamp for sharding, oplog, etc.
+                final int inc = buf.getInt();
+                final int time = buf.getInt();
+                // TODO - BSONTimestamp object
+                break;
+            case BSON.MIN_KEY:
+                b.put(name, BSON.MinKey.getInstance());
+                break;
+            case BSON.MAX_KEY:
+                b.put(name, BSON.MaxKey.getInstance());
+                break;
+            default:
+                throw new UnsupportedOperationException("No support for decoding BSON type of byte '" + type + "'");
+        }
+
+        return true;
+    }
+
+    public T result() {
+        if (!parsed)
+            parse();
+
+        return b.get();
+    }
+
+    public abstract BSONReader<T> newDocumentParser(ByteBuffer tBuf);
+
+    protected BSONDocumentBuilder<T> b;
+    protected final int len;
+    protected final BSONByteBuffer buf;
+    protected boolean useCustomDate = false;
+    protected boolean parsed = false;
 }
