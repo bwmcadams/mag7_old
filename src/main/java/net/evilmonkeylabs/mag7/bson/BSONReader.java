@@ -2,7 +2,11 @@ package net.evilmonkeylabs.mag7.bson;
 
 import net.evilmonkeylabs.mag7.bson.doc.BSONDocumentBuilder;
 import net.evilmonkeylabs.mag7.bson.doc.BSONList;
+import net.evilmonkeylabs.mag7.bson.doc.Document;
 import net.evilmonkeylabs.mag7.bson.io.BSONByteBuffer;
+import net.evilmonkeylabs.mag7.bson.types.BSONTimestamp;
+import net.evilmonkeylabs.mag7.bson.types.Code;
+import net.evilmonkeylabs.mag7.bson.types.CodeWScope;
 
 import java.nio.ByteBuffer;
 import java.util.Date;
@@ -65,7 +69,6 @@ public abstract class BSONReader<T> {
                 b.put(name, buf.getUTF8String());
                 break;
             case BSON.DOCUMENT:
-                // TODO - Break out slice and reparse
                 final BSONReader<T> dP = newDocumentParser(buf.slice());
                 final T doc = dP.result();
                 b.put(name, doc);
@@ -106,13 +109,16 @@ public abstract class BSONReader<T> {
                 break;
             case BSON.DBREF:
                 // TODO - parse.. CString (NS) then OID
+                throw new UnsupportedOperationException("DBRef not yet supported");
                 break;
             case BSON.JSCODE:
-                b.put(name, buf.getUTF8String());
+                b.put(name, new Code(buf.getUTF8String()));
                 break;
             case BSON.JSCODE_W_SCOPE:
-                String code = buf.getUTF8String();
-                //TODO - parse out document
+                final String code = buf.getUTF8String();
+                final BSONReader<T> sP = newDocumentParser(buf.slice());
+                final T scope = sP.result();
+                b.put(name, new CodeWScope<T>(code, scope));
                 break;
             case BSON.SYMBOL:
                 // TODO - Should we use something other than String for symbols in java?
@@ -129,7 +135,7 @@ public abstract class BSONReader<T> {
                 // Special BSON Timestamp for sharding, oplog, etc.
                 final int inc = buf.getInt();
                 final int time = buf.getInt();
-                // TODO - BSONTimestamp object
+                b.put(name, new BSONTimestamp(time, inc));
                 break;
             case BSON.MIN_KEY:
                 b.put(name, BSON.MinKey.getInstance());
