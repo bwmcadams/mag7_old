@@ -76,8 +76,7 @@ public abstract class BSONReader<T> {
                 break;
             case BSON.ARRAY:
                 //  TODO - Let user specify custom list builder !!!
-                final BSONReader<BSONList> lP = new DefaultBSONArrayParser(buf.slice());
-                final BSONList list = lP.result();
+                final Object list = parseArray();
                 b.put(name, list);
                 break;
             case BSON.BINARY:
@@ -150,6 +149,11 @@ public abstract class BSONReader<T> {
         }
 
         return true;
+    }
+
+    protected BSONList parseArray() {
+        final BSONReader<BSONList> lP = new DefaultBSONArrayParser(buf.slice());
+        return lP.result();
     }
 
     public T result() {
