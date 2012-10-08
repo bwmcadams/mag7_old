@@ -78,15 +78,18 @@ public abstract class BSONReader<T> {
 			_subBuf.position(pos.get());
 			final BSONReader<T> dP = newDocumentParser(_subBuf);
 			final T doc = dP.result();
-			log.info("SubDoc: " + doc + " Pos from " + pos + " to " + dP.lastPos());
 			b.putDocument(name, doc);
 			pos.getAndSet(dP.lastPos());
 			break;
 		case BSON.ARRAY:
 			// TODO - Let user specify custom list builder !!!
-			log.warning("**** I DONT KNOW HOW TO SLICE HERE YET !!!!");
-			final Object list = parseArray();
+			log.info("//////// ARRAY");
+			final ByteBuffer _subLst = buf.slice();
+			_subLst.position(pos.get());
+			final BSONReader<BSONList> lP = new DefaultBSONArrayParser(_subLst);
+			final BSONList list = lP.result();
 			b.putList(name, list);
+			pos.getAndSet(lP.lastPos());
 			break;
 		case BSON.BINARY:
 			// TODO - Break out and parse Binary
@@ -166,10 +169,6 @@ public abstract class BSONReader<T> {
 		return pos.get();
 	}
 
-	protected BSONList parseArray() {
-		final BSONReader<BSONList> lP = new DefaultBSONArrayParser(buf.slice());
-		return lP.result();
-	}
 
 	public T result() {
 		if (!parsed)

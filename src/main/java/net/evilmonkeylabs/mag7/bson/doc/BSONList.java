@@ -37,7 +37,7 @@ public class BSONList extends ArrayList<Object> {
 			try {
 				final int n = Integer.parseInt(key);
 				// TODO - type conversions here?
-				lst.set(n, value);
+				lst.add(n, value);
 			} catch (NumberFormatException e) {
 				throw new BSONException(
 						"Unable to parse BSON Array, expected an integer key, "
