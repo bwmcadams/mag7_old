@@ -4,6 +4,7 @@ import net.evilmonkeylabs.mag7.bson.doc.BSONDocumentBuilder;
 import net.evilmonkeylabs.mag7.bson.doc.BSONList;
 import net.evilmonkeylabs.mag7.bson.io.BSONByteBuffer;
 import java.nio.ByteBuffer;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Logger;
 
 /**
@@ -31,7 +32,7 @@ public abstract class BSONReader<T> {
 	public BSONReader(final ByteBuffer _buf) {
 		log.info("Hex Dump: " + BSON.dumpBytes(_buf.array()));
 		buf = new BSONByteBuffer(_buf);
-		len = buf.getInt();
+		len = buf.getInt(pos.getAndAdd(4));
 		log.info("New BSON Data, Length: " + len + " position " + buf.position());
 	}
 
@@ -42,20 +43,18 @@ public abstract class BSONReader<T> {
 	public abstract BSONDocumentBuilder<T> newBuilder();
 
 	protected void parse() {
-		while (parseEntry())
-			;
+		while (parseEntry());
 		parsed = true;
 	}
 
 	protected boolean parseEntry() {
-		log.info("Pos " + buf.position());
-		final byte type = buf.get();
-		log.info("Pos " + buf.position());
+		final byte type = buf.get(pos.getAndIncrement());
 
 		if (type == BSON.EOO)
 			return false;
 
-		final String name = buf.getCString();
+		final int sz = buf.sizeCString(pos.get());
+		final String name = buf.getCString(pos.getAndAdd(sz));
 		log.info("name: " + name + " type: " + type);
 
 		switch (type) {
@@ -64,18 +63,22 @@ public abstract class BSONReader<T> {
 			b.putNull(name);
 			break;
 		case BSON.DOUBLE:
-			b.putDouble(name, buf.getDouble());
+			b.putDouble(name, buf.getDouble(pos.getAndAdd(8)));
 			break;
 		case BSON.STRING:
-			b.putString(name, buf.getUTF8String());
+			final String val = buf.getUTF8String(pos.get());
+			b.putString(name, val);
+			pos.getAndAdd(val.length() + 4);
 			break;
 		case BSON.DOCUMENT:
+			log.warning("**** I DONT KNOW HOW TO SLICE HERE YET !!!!");
 			final BSONReader<T> dP = newDocumentParser(buf.slice());
 			final T doc = dP.result();
 			b.putDocument(name, doc);
 			break;
 		case BSON.ARRAY:
 			// TODO - Let user specify custom list builder !!!
+			log.warning("**** I DONT KNOW HOW TO SLICE HERE YET !!!!");
 			final Object list = parseArray();
 			b.putList(name, list);
 			break;
@@ -84,10 +87,10 @@ public abstract class BSONReader<T> {
 			break;
 		case BSON.OBJECTID:
 			// OIDs are stored as Big Endian
-			b.putObjectID(name, buf.getIntBE(), buf.getIntBE(), buf.getIntBE());
+			b.putObjectID(name, buf.getIntBE(pos.getAndAdd(4)), buf.getIntBE(pos.getAndAdd(4)), buf.getIntBE(pos.getAndAdd(4)));
 			break;
 		case BSON.BOOLEAN:
-			switch (buf.get()) {
+			switch (buf.get(pos.getAndIncrement())) {
 			case 0x01:
 				b.putBoolTrue(name);
 			case 0x00:
@@ -97,12 +100,14 @@ public abstract class BSONReader<T> {
 			}
 			break;
 		case BSON.UTC_DATETIME:
-			long tsp = buf.getLong();
+			final long tsp = buf.getLong(pos.getAndAdd(8));
 			b.putDateTime(name, tsp);
 			break;
 		case BSON.REGEX:
-			final String pattern = buf.getCString();
-			final String options = buf.getCString();
+			final int pSz = buf.sizeCString(pos.get());
+			final String pattern = buf.getCString(pos.getAndAdd(pSz));
+			final int oSz = buf.sizeCString(pos.get());
+			final String options = buf.getCString(pos.getAndAdd(oSz));
 			b.putRegex(name, pattern, options);
 			break;
 		case BSON.DBREF:
@@ -110,27 +115,33 @@ public abstract class BSONReader<T> {
 			throw new UnsupportedOperationException("DBRef not yet supported");
 			// break;
 		case BSON.JSCODE:
-			b.putCode(name, buf.getUTF8String());
+			final String code = buf.getUTF8String(pos.get());
+			b.putCode(name, code);
+			pos.getAndAdd(code.length() + 4);
 			break;
 		case BSON.JSCODE_W_SCOPE:
-			final String code = buf.getUTF8String();
+			final String scopedCode = buf.getUTF8String(pos.get());
+			log.warning("**** I DONT KNOW HOW TO SLICE HERE YET !!!!");
 			final BSONReader<T> sP = newDocumentParser(buf.slice());
 			final T scope = sP.result();
-			b.putScopedCode(name, code, scope);
+			b.putScopedCode(name, scopedCode, scope);
+			pos.getAndAdd(scopedCode.length() + 4);
 			break;
 		case BSON.SYMBOL:
-			b.putSymbol(name, buf.getUTF8String());
+			final String sym = buf.getUTF8String(pos.get());
+			b.putSymbol(name, sym);
+			pos.getAndAdd(sym.length() + 4);
 			break;
 		case BSON.INT32:
-			b.putInteger(name, buf.getInt());
+			b.putInteger(name, buf.getInt(pos.getAndAdd(4)));
 			break;
 		case BSON.INT64:
-			b.putLong(name, buf.getLong());
+			b.putLong(name, buf.getLong(pos.getAndAdd(8)));
 			break;
 		case BSON.TIMESTAMP:
 			// Special BSON Timestamp for sharding, oplog, etc.
-			final int inc = buf.getInt();
-			final int time = buf.getInt();
+			final int inc = buf.getInt(pos.getAndAdd(4));
+			final int time = buf.getInt(pos.getAndAdd(4));
 			b.putTimestamp(name, time, inc);
 			break;
 		case BSON.MIN_KEY:
@@ -163,6 +174,7 @@ public abstract class BSONReader<T> {
 
 	protected BSONDocumentBuilder<T> b;
 	protected final int len;
+	protected final AtomicInteger pos = new AtomicInteger(0);
 	protected final BSONByteBuffer buf;
 	protected boolean parsed = false;
 	
