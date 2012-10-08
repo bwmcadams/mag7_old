@@ -81,7 +81,7 @@ class BSONTest extends Specification {
   
   def hasSymbol = parsedBSON.get("symbol") must be_==(testSym.getSymbol())
   
-  def hasCode = parsedBSON.get("code") must be_==(testCode.getCode())
+  def hasCode = parsedBSON.get("code").toString must be_==(testCode.getCode().toString)
   
   
   
@@ -147,6 +147,8 @@ class BSONTest extends Specification {
     b.append("float324_582", 324.582f);
     b.append("double245_6289", 245.6289);
     b.append("oid", testOid);
+    // Code wonky
+    b.append("code", testCode);
     // TODO - Shell doesn't work with Code W/ Scope, return to this test later
     /*
     b.append( "code_scoped", new CodeWScope( "return x * 500;", test_doc ) );*/
@@ -159,8 +161,6 @@ class BSONTest extends Specification {
     b.append("regex", testRE);
     // Symbol wonky
     b.append("symbol", testSym );
-    // Code wonky
-    b.append("code", testCode);
 
     val doc = b.get()
     

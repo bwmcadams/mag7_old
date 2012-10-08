@@ -123,7 +123,7 @@ public abstract class BSONReader<T> {
 			final String code = buf.getUTF8String(pos.get());
 			log.info("JSCode at '" + name + "' - " + code);
 			b.putCode(name, code);
-			pos.getAndAdd(code.length() + 4);
+			pos.getAndAdd(code.length() + 4 + 1);
 			break;
 		case BSON.JSCODE_W_SCOPE:
 			final String scopedCode = buf.getUTF8String(pos.get());
@@ -131,12 +131,12 @@ public abstract class BSONReader<T> {
 			final BSONReader<T> sP = newDocumentParser(buf.slice());
 			final T scope = sP.result();
 			b.putScopedCode(name, scopedCode, scope);
-			pos.getAndAdd(scopedCode.length() + 4);
+			pos.getAndAdd(scopedCode.length() + 4 + 1);
 			break;
 		case BSON.SYMBOL:
 			final String sym = buf.getUTF8String(pos.get());
 			b.putSymbol(name, sym);
-			pos.getAndAdd(sym.length() + 4);
+			pos.getAndAdd(sym.length() + 4 + 1);
 			break;
 		case BSON.INT32:
 			b.putInteger(name, buf.getInt(pos.getAndAdd(4)));
