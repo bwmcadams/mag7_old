@@ -19,85 +19,77 @@ import java.io.OutputStream;
 import java.nio.ByteBuffer;
 import java.nio.MappedByteBuffer;
 
-
 /**
- * An <code>OutputStream</code> that writes to an existing <code>ByteBuffer</code>.
- * The buffer is repositioned at construction, and written sequentially. Attempts
- * to write past the capacity of the buffer will result in <code>IOException</code>.
+ * An <code>OutputStream</code> that writes to an existing
+ * <code>ByteBuffer</code>. The buffer is repositioned at construction, and
+ * written sequentially. Attempts to write past the capacity of the buffer will
+ * result in <code>IOException</code>.
  * <p/>
- * <em>Warnings:</em>
- * Because this class explicitly repositions the buffer, you should not create
- * two instances around the same buffer; <code>slice()</code> the buffer
- * instead. Instances of this class are only as thread-safe as the underlying
- * buffer (and the JavaDocs don't have much to say about that).
+ * <em>Warnings:</em> Because this class explicitly repositions the buffer, you
+ * should not create two instances around the same buffer; <code>slice()</code>
+ * the buffer instead. Instances of this class are only as thread-safe as the
+ * underlying buffer (and the JavaDocs don't have much to say about that).
  */
-public class ByteBufferOutputStream
-        extends OutputStream {
-    private ByteBuffer _buf;
-    private boolean _isClosed;
+public class ByteBufferOutputStream extends OutputStream {
+	private ByteBuffer _buf;
+	private boolean _isClosed;
 
+	/**
+	 * Creates an instance that repositions the passed buffer to its start.
+	 */
+	public ByteBufferOutputStream(ByteBuffer buf) {
+		this(buf, 0);
+	}
 
-    /**
-     * Creates an instance that repositions the passed buffer to its start.
-     */
-    public ByteBufferOutputStream(ByteBuffer buf) {
-        this(buf, 0);
-    }
+	/**
+	 * Creates an instance that repositions the passed buffer to the specified
+	 * index.
+	 */
+	public ByteBufferOutputStream(ByteBuffer buf, int index) {
+		_buf = buf;
+		_buf.position(index);
+	}
 
+	// ----------------------------------------------------------------------------
+	// OutputStream
+	// ----------------------------------------------------------------------------
 
-    /**
-     * Creates an instance that repositions the passed buffer to the specified
-     * index.
-     */
-    public ByteBufferOutputStream(ByteBuffer buf, int index) {
-        _buf = buf;
-        _buf.position(index);
-    }
+	@Override
+	public void close() throws IOException {
+		_isClosed = true;
+	}
 
+	@Override
+	public void flush() throws IOException {
+		if (_buf instanceof MappedByteBuffer)
+			((MappedByteBuffer) _buf).force();
+	}
 
-//----------------------------------------------------------------------------
-//  OutputStream
-//----------------------------------------------------------------------------
+	@Override
+	public void write(byte[] b, int off, int len) throws IOException {
+		if (_isClosed)
+			throw new IOException("buffer is closed");
 
-    @Override
-    public void close() throws IOException {
-        _isClosed = true;
-    }
+		if (len > _buf.remaining())
+			throw new IOException("write too large: " + len + " bytes, "
+					+ _buf.remaining() + " remaining in buffer");
 
+		_buf.put(b, off, len);
+	}
 
-    @Override
-    public void flush() throws IOException {
-        if (_buf instanceof MappedByteBuffer)
-            ((MappedByteBuffer) _buf).force();
-    }
+	@Override
+	public void write(byte[] b) throws IOException {
+		write(b, 0, b.length);
+	}
 
+	@Override
+	public void write(int b) throws IOException {
+		if (_isClosed)
+			throw new IOException("buffer is closed");
 
-    @Override
-    public void write(byte[] b, int off, int len) throws IOException {
-        if (_isClosed)
-            throw new IOException("buffer is closed");
+		if (_buf.remaining() == 0)
+			throw new IOException("no space left in buffer");
 
-        if (len > _buf.remaining())
-            throw new IOException("write too large: " + len + " bytes, " + _buf.remaining() + " remaining in buffer");
-
-        _buf.put(b, off, len);
-    }
-
-
-    @Override
-    public void write(byte[] b) throws IOException {
-        write(b, 0, b.length);
-    }
-
-
-    @Override
-    public void write(int b) throws IOException {
-        if (_isClosed)
-            throw new IOException("buffer is closed");
-
-        if (_buf.remaining() == 0)
-            throw new IOException("no space left in buffer");
-
-        _buf.put((byte) b);
-    }
+		_buf.put((byte) b);
+	}
 }

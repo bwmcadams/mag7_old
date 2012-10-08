@@ -16,36 +16,36 @@ package net.evilmonkeylabs.mag7.bson.types;
  *   limitations under the License.
  */
 
-
-import net.evilmonkeylabs.mag7.bson.doc.Document;
-
 /**
  * for using the CodeWScope type
  */
 public class CodeWScope<T> extends Code {
 
-    private static final long serialVersionUID = -6284832275113680002L;
+	private static final long serialVersionUID = -6284832275113680002L;
 
-    public CodeWScope( String code , T scope ){
-        super( code );
-        _scope = scope;
-    }
+	public CodeWScope(String code, T scope) {
+		super(code);
+		_scope = scope;
+	}
 
-    public T getScope(){
-        return _scope;
-    }
+	public T getScope() {
+		return _scope;
+	}
 
-    public boolean equals( Object o ){
-        if ( ! ( o instanceof CodeWScope ) )
-            return false;
+	@Override
+	public boolean equals(Object o) {
+		if (!(o instanceof CodeWScope))
+			return false;
 
-        CodeWScope c = (CodeWScope)o;
-        return _code.equals( c._code ) && _scope.equals( c._scope );
-    }
+		@SuppressWarnings("unchecked")
+		CodeWScope<T> c = (CodeWScope<T>) o;
+		return _code.equals(c._code) && _scope.equals(c._scope);
+	}
 
-    public int hashCode(){
-        return _code.hashCode() ^ _scope.hashCode();
-    }
+	@Override
+	public int hashCode() {
+		return _code.hashCode() ^ _scope.hashCode();
+	}
 
-    final T _scope;
+	final T _scope;
 }

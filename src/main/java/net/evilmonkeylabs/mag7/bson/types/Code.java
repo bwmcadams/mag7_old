@@ -18,44 +18,42 @@ package net.evilmonkeylabs.mag7.bson.types;
  *   limitations under the License.
  */
 
-
 import java.io.Serializable;
-
 
 /**
  * for using the Code type
  */
 public class Code implements Serializable {
 
-    private static final long serialVersionUID = 475535263314046697L;
+	private static final long serialVersionUID = 475535263314046697L;
 
-    public Code( String code ){
-        _code = code;
-    }
+	public Code(String code) {
+		_code = code;
+	}
 
-    public String getCode(){
-        return _code;
-    }
+	public String getCode() {
+		return _code;
+	}
 
-    public boolean equals( Object o ){
-        if ( ! ( o instanceof Code ) )
-            return false;
+	@Override
+	public boolean equals(Object o) {
+		if (!(o instanceof Code))
+			return false;
 
-        Code c = (Code)o;
-        return _code.equals( c._code );
-    }
+		Code c = (Code) o;
+		return _code.equals(c._code);
+	}
 
-    public int hashCode(){
-        return _code.hashCode();
-    }
+	@Override
+	public int hashCode() {
+		return _code.hashCode();
+	}
 
-    @Override
-    public String toString() {
-        return getCode();
-    }
+	@Override
+	public String toString() {
+		return getCode();
+	}
 
-    final String _code;
+	final String _code;
 
 }
-
-

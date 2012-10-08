@@ -1,4 +1,5 @@
 package net.evilmonkeylabs.mag7.bson.io;
+
 /**
  * Copyright (C) 2011, 10gen Inc.
  *
@@ -15,60 +16,71 @@ package net.evilmonkeylabs.mag7.bson.io;
  * limitations under the License.
  */
 
-
 /**
  * A general runtime exception raised in BSON processing.
  */
 public class BSONException extends RuntimeException {
 
-    private static final long serialVersionUID = -4415279469780082174L;
+	private static final long serialVersionUID = -4415279469780082174L;
 
-    /**
-     * @param msg The error message.
-     */
-    public BSONException( final String msg ) {
-        super( msg );
-    }
+	/**
+	 * @param msg
+	 *            The error message.
+	 */
+	public BSONException(final String msg) {
+		super(msg);
+	}
 
-    /**
-     * @param errorCode The error code.
-     * @param msg The error message.
-     */
-    public BSONException( final int errorCode, final String msg ) {
-        super( msg );
-        _errorCode = errorCode;
-    }
+	/**
+	 * @param errorCode
+	 *            The error code.
+	 * @param msg
+	 *            The error message.
+	 */
+	public BSONException(final int errorCode, final String msg) {
+		super(msg);
+		_errorCode = errorCode;
+	}
 
-    /**
-     * @param msg The error message.
-     * @param t The throwable cause.
-     */
-    public BSONException( final String msg , final Throwable t ) {
-        super( msg,  t );
-    }
+	/**
+	 * @param msg
+	 *            The error message.
+	 * @param t
+	 *            The throwable cause.
+	 */
+	public BSONException(final String msg, final Throwable t) {
+		super(msg, t);
+	}
 
-    /**
-     * @param errorCode The error code.
-     * @param msg The error message.
-     * @param t The throwable cause.
-     */
-    public BSONException( final int errorCode, final String msg, final Throwable t ) {
-        super( msg,  t );
-        _errorCode = errorCode;
-    }
+	/**
+	 * @param errorCode
+	 *            The error code.
+	 * @param msg
+	 *            The error message.
+	 * @param t
+	 *            The throwable cause.
+	 */
+	public BSONException(final int errorCode, final String msg,
+			final Throwable t) {
+		super(msg, t);
+		_errorCode = errorCode;
+	}
 
-    /**
-     * Returns the error code.
-     * @return The error code.
-     */
-    public Integer getErrorCode() { return _errorCode; }
+	/**
+	 * Returns the error code.
+	 * 
+	 * @return The error code.
+	 */
+	public Integer getErrorCode() {
+		return _errorCode;
+	}
 
-    /**
-     * Returns true if the error code is set (i.e., not null).
-     */
-    public boolean hasErrorCode() { return (_errorCode != null); }
+	/**
+	 * Returns true if the error code is set (i.e., not null).
+	 */
+	public boolean hasErrorCode() {
+		return (_errorCode != null);
+	}
 
-    private Integer _errorCode = null;
+	private Integer _errorCode = null;
 }
-
-
