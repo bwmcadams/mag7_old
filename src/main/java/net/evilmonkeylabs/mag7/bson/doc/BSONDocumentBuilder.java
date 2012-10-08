@@ -118,9 +118,7 @@ public abstract class BSONDocumentBuilder<T> {
 	 * @param inc
 	 */
 	public void putObjectID(String key, int time, int machine, int inc) {
-		ObjectID oid = new ObjectID(time, machine, inc);
-		log.info("Parsed OID: " + oid);
-		put(key, oid);
+		put(key, new ObjectID(time, machine, inc));
 	}
 
 	/**

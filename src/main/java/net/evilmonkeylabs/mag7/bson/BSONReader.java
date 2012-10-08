@@ -30,10 +30,10 @@ import java.util.logging.Logger;
 public abstract class BSONReader<T> {
 
 	public BSONReader(final ByteBuffer _buf) {
-		log.info("Hex Dump: " + BSON.dumpBytes(_buf.array()));
 		buf = new BSONByteBuffer(_buf);
+		startPos = _buf.position(); 
+		pos = new AtomicInteger(startPos);
 		len = buf.getInt(pos.getAndAdd(4));
-		log.info("New BSON Data, Length: " + len + " position " + buf.position());
 	}
 
 	public DefaultBSONDocParser parseDocument(final ByteBuffer buf) {
@@ -44,19 +44,21 @@ public abstract class BSONReader<T> {
 
 	protected void parse() {
 		while (parseEntry());
+		log.info("[" + startPos + "] Stopped parsing at " + pos);
 		parsed = true;
 	}
 
 	protected boolean parseEntry() {
 		final byte type = buf.get(pos.getAndIncrement());
 
-		if (type == BSON.EOO)
+		if (type == BSON.EOO) 
 			return false;
 
 		final int sz = buf.sizeCString(pos.get());
 		final String name = buf.getCString(pos.getAndAdd(sz));
-		log.info("name: " + name + " type: " + type);
 
+		log.info("[" + startPos + "] name: " + name + " type: " + type);
+		
 		switch (type) {
 		case BSON.NULL:
 		case BSON.UNDEF:
@@ -68,13 +70,17 @@ public abstract class BSONReader<T> {
 		case BSON.STRING:
 			final String val = buf.getUTF8String(pos.get());
 			b.putString(name, val);
-			pos.getAndAdd(val.length() + 4);
+			pos.getAndAdd(val.length() + 4 + 1);
 			break;
 		case BSON.DOCUMENT:
-			log.warning("**** I DONT KNOW HOW TO SLICE HERE YET !!!!");
-			final BSONReader<T> dP = newDocumentParser(buf.slice());
+			log.info("//////// OBJECT");
+			final ByteBuffer _subBuf = buf.slice();
+			_subBuf.position(pos.get());
+			final BSONReader<T> dP = newDocumentParser(_subBuf);
 			final T doc = dP.result();
+			log.info("SubDoc: " + doc + " Pos from " + pos + " to " + dP.lastPos());
 			b.putDocument(name, doc);
+			pos.getAndSet(dP.lastPos());
 			break;
 		case BSON.ARRAY:
 			// TODO - Let user specify custom list builder !!!
@@ -90,14 +96,10 @@ public abstract class BSONReader<T> {
 			b.putObjectID(name, buf.getIntBE(pos.getAndAdd(4)), buf.getIntBE(pos.getAndAdd(4)), buf.getIntBE(pos.getAndAdd(4)));
 			break;
 		case BSON.BOOLEAN:
-			switch (buf.get(pos.getAndIncrement())) {
-			case 0x01:
+			if (buf.get(pos.getAndIncrement()) == 0x01) 
 				b.putBoolTrue(name);
-			case 0x00:
-			default: // fall through
+			else 
 				b.putBoolFalse(name);
-				break;
-			}
 			break;
 		case BSON.UTC_DATETIME:
 			final long tsp = buf.getLong(pos.getAndAdd(8));
@@ -116,6 +118,7 @@ public abstract class BSONReader<T> {
 			// break;
 		case BSON.JSCODE:
 			final String code = buf.getUTF8String(pos.get());
+			log.info("JSCode at '" + name + "' - " + code);
 			b.putCode(name, code);
 			pos.getAndAdd(code.length() + 4);
 			break;
@@ -151,11 +154,16 @@ public abstract class BSONReader<T> {
 			b.putMaxKey(name);
 			break;
 		default:
+			log.warning("Unknown BSON Type '" + type + "'");
 			throw new UnsupportedOperationException(
 					"No support for decoding BSON type of byte '" + type + "'");
 		}
 
 		return true;
+	}
+
+	protected int lastPos() {
+		return pos.get();
 	}
 
 	protected BSONList parseArray() {
@@ -174,9 +182,10 @@ public abstract class BSONReader<T> {
 
 	protected BSONDocumentBuilder<T> b;
 	protected final int len;
-	protected final AtomicInteger pos = new AtomicInteger(0);
+	protected final int startPos;
+	protected final AtomicInteger pos;
 	protected final BSONByteBuffer buf;
 	protected boolean parsed = false;
 	
-	protected final static Logger log = Logger.getLogger("BSONReader");
+	protected static final Logger log = Logger.getLogger("BSONReader");
 }

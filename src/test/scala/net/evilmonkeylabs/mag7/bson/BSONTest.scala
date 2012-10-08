@@ -18,36 +18,118 @@ class BSONTest extends Specification {
       p ^
       "Parsing of BSON should" ^
       "Provide clear, valid, and sane interop w/ old Java driver" ^
-      	"Parsing returns a valid document" ! testBasicParse ^ 
+      	"Parsing returns a valid document, checking fields" ! testBasicParse ^ 
+	      	"_id" ! hasOID ^
+	      	"null" ! hasNull ^
+	      	"maxKey" ! hasMax ^
+	      	"minKey" ! hasMin ^
+	      	"booleanTrue" ! hasBoolTrue ^
+	      	"booleanFalse" ! hasBoolFalse ^
+	      	"int1" ! hasInt1 ^
+	      	"int1500" ! hasInt1500 ^
+	      	"int3753" ! hasInt3753 ^
+	      	"tsp" ! hasTsp ^
+	      	"date" ! hasDate ^
+	      	"long5" ! hasLong5 ^
+	      	"long3254525" ! hasLong3254525 ^
+	      	"float324_582" ! hasFloat324_582 ^
+	      	"double245_6289" ! hasDouble245_6289 ^
+	      	"another OID" ! hasOtherOID ^
+	      	"symbol" ! hasSymbol ^
+	      	"code" ! hasCode ^
       														 end
 
+  def testBasicParse = {
+    parsedBSON must haveClass[Document] and not beNull
+  }
+  
+  def hasOID = parsedBSON.get("_id") must haveClass[ObjectID] and beEqualTo(new ObjectID(oid.toString()))
+  
+  def hasNull = parsedBSON.get("null") must beNull
+  
+  def hasMax = parsedBSON.get("max") must haveClass[BSON.MaxKey]
+  
+  def hasMin = parsedBSON.get("min") must haveClass[BSON.MinKey]
+  
+  def hasBoolTrue = parsedBSON.get("booleanTrue").asInstanceOf[Boolean] must beTrue
+  
+  def hasBoolFalse = parsedBSON.get("booleanFalse").asInstanceOf[Boolean] must beFalse
+  
+  def hasInt1 = parsedBSON.get("int1").asInstanceOf[Int] must be_==(1)
+  
+  def hasInt1500 = parsedBSON.get("int1500").asInstanceOf[Int] must be_==(1500)
+  
+  def hasInt3753 = parsedBSON.get("int3753").asInstanceOf[Int] must be_==(3753)
+    
+  def hasTsp = { 
+    val tsp = parsedBSON.get("tsp").asInstanceOf[BSONTimestamp]
+    // TODO - Make this test less stupidly lazy
+    tsp.toString must beEqualTo(testTsp.toString)
+  } 
+  
+  def hasDate = parsedBSON.get("date").asInstanceOf[java.util.Date] must be_==(testDate)
+  
+  def hasLong5 = parsedBSON.get("long5") must be_==(5L)
+  
+  def hasLong3254525 = parsedBSON.get("long3254525") must be_==(3254525L)
+  
+  def hasFloat324_582 = parsedBSON.get("float324_582") must be_==(324.582f)
+  
+  def hasDouble245_6289 = parsedBSON.get("double245_6289") must be_==(245.6289)
+  
+  def hasOtherOID  = parsedBSON.get("oid").toString must be_==(testOid.toString)
+  
+  def hasSymbol = parsedBSON.get("symbol") must be_==(testSym.getSymbol())
+  
+  def hasCode = parsedBSON.get("code") must be_==(testCode.getCode())
+  
+  
+  
+  // -- Setup definitions
+  
+  lazy val oid = new org.bson.types.ObjectId
+  
+  lazy val testOid = new org.bson.types.ObjectId
+  
+  lazy val testRefId = new org.bson.types.ObjectId
+  
+  
+  lazy val testDoc = {
+    val t = new com.mongodb.BasicDBObject
+    t.put("foo", "bar");
+    t.put("x", 5.23);
+    t
+  }
+  
+  lazy val testList = {
+    val t = new java.util.ArrayList[String]
+    t.add("foo");
+    t.add("bar");
+    t.add("baz");
+    t.add("x");
+    t.add("y");
+    t.add("z");
+    t 
+  }
+      														 	
+  lazy val testTsp = new org.bson.types.BSONTimestamp(3600, 42); 
+  
+  lazy val testDate = new java.util.Date();
+  
+  
+  lazy val testRE = Pattern.compile("^test.*regex.*xyz$", Pattern.CASE_INSENSITIVE);
+  
+  
+  lazy val testSym = new org.bson.types.Symbol("foobar")
+  
+  lazy val testCode = new org.bson.types.Code("var x = 12345;")
+  
   lazy val javaBSON = {
-    val oid = new org.bson.types.ObjectId
-    val testOid = new org.bson.types.ObjectId
-    val testRefId = new org.bson.types.ObjectId
-
-    val testDoc = new com.mongodb.BasicDBObject
-    testDoc.put("foo", "bar");
-    testDoc.put("x", 5.23);
-
-    val testList = new java.util.ArrayList[String]
-    testList.add("foo");
-    testList.add("bar");
-    testList.add("baz");
-    testList.add("x");
-    testList.add("y");
-    testList.add("z");
-
-    val testTsp = new org.bson.types.BSONTimestamp();
-
-    val testDate = new java.util.Date();
 
     /* BINARY
 	val testBin = new Binary("foobarbaz".getBytes())
 	val testUUID = UUID.randomUUID()
 	*/
-    val testRE = Pattern.compile("^test.*regex.*xyz$", Pattern.CASE_INSENSITIVE);
-
     val b = com.mongodb.BasicDBObjectBuilder.start()
     b.append("_id", oid)
     b.append("null", null);
@@ -65,10 +147,6 @@ class BSONTest extends Specification {
     b.append("float324_582", 324.582f);
     b.append("double245_6289", 245.6289);
     b.append("oid", testOid);
-    // Symbol wonky
-    b.append("symbol", new org.bson.types.Symbol("foobar"));
-    // Code wonky
-    b.append("code", new org.bson.types.Code("var x = 12345;"));
     // TODO - Shell doesn't work with Code W/ Scope, return to this test later
     /*
     b.append( "code_scoped", new CodeWScope( "return x * 500;", test_doc ) );*/
@@ -79,6 +157,10 @@ class BSONTest extends Specification {
     //b.append("binary", testBin);
     //b.append("uuid", testUUID);
     b.append("regex", testRE);
+    // Symbol wonky
+    b.append("symbol", testSym );
+    // Code wonky
+    b.append("code", testCode);
 
     val doc = b.get()
     
@@ -87,12 +169,9 @@ class BSONTest extends Specification {
     java.nio.ByteBuffer.wrap(encoder.encode(doc))
   }
   
-  lazy val parsedBSON = {
+  lazy val parsedBSON: Document = {
     val p = new DefaultBSONDocParser(javaBSON) 
     p.result()
   }
   
-  def testBasicParse = {
-    parsedBSON must not beNull
-  }
 }
