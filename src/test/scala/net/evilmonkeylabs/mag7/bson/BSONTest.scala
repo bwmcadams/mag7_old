@@ -4,6 +4,8 @@ import org.specs2._
 import org.junit.runner._
 import runner._
 
+import scala.collection.JavaConverters._
+
 import net.evilmonkeylabs.mag7.bson.doc._
 import net.evilmonkeylabs.mag7.bson.types._
 
@@ -39,6 +41,10 @@ class BSONTest extends Specification {
       "scoped code, code" ! hasScopedCode_Code ^
       "scoped code, scope" ! hasScopedCode_Scope ^
       "str" ! hasStr ^
+      "object" ! hasSubObj ^
+      "array" ! hasArray ^
+      "binary" ! hasBytes ^
+      "uuid" ! hasUUID ^
       end
 
   def testBasicParse = {
@@ -87,10 +93,17 @@ class BSONTest extends Specification {
 
   def hasScopedCode_Code = parsedBSON.get("code_scoped").asInstanceOf[CodeWScope[Document]].getCode must be_==(testCodeWScope.getCode())
   
-  def hasScopedCode_Scope = parsedBSON.get("code_scoped").asInstanceOf[CodeWScope[Document]].getScope().toString() must be_==(testCodeWScope.getScope().toString())
+  def hasScopedCode_Scope = parsedBSON.get("code_scoped").asInstanceOf[CodeWScope[Document]].getScope().asScala must havePairs("foo" -> "bar", "x"-> 5.23)
   
   def hasStr = parsedBSON.get("str").asInstanceOf[String] must be_==(testStr)
   
+  def hasSubObj = parsedBSON.get("object").asInstanceOf[Document].asScala must havePairs("foo" -> "bar", "x" -> 5.23)
+      
+  def hasArray = parsedBSON.get("array").asInstanceOf[BSONList].asScala must contain("foo", "bar", "baz", "x", "y", "z")
+  
+  def hasBytes = parsedBSON.get("binary").asInstanceOf[java.nio.ByteBuffer].array() must beEqualTo(testBin.getData())
+  
+  def hasUUID = parsedBSON.get("uuid").asInstanceOf[java.util.UUID] must beEqualTo(testUUID)
   // -- Setup definitions
 
   lazy val oid = new org.bson.types.ObjectId
@@ -134,6 +147,7 @@ class BSONTest extends Specification {
   lazy val testCodeWScope = new org.bson.types.CodeWScope("return x * 500;", testDoc)
 
   lazy val testStr = "foobarbaz"
+   
     
   lazy val javaBSON = {
 

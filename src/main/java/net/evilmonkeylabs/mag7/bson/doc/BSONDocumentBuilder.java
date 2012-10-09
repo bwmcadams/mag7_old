@@ -2,13 +2,16 @@ package net.evilmonkeylabs.mag7.bson.doc;
 
 import java.nio.ByteBuffer;
 import java.util.Date;
+import java.util.UUID;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
 
 import net.evilmonkeylabs.mag7.bson.BSON;
+import net.evilmonkeylabs.mag7.bson.io.BSONByteBuffer;
 import net.evilmonkeylabs.mag7.bson.types.BSONTimestamp;
 import net.evilmonkeylabs.mag7.bson.types.Code;
 import net.evilmonkeylabs.mag7.bson.types.CodeWScope;
+import net.evilmonkeylabs.mag7.bson.types.MD5;
 import net.evilmonkeylabs.mag7.bson.types.ObjectID;
 
 /**
@@ -267,13 +270,19 @@ public abstract class BSONDocumentBuilder<T> {
 	 * Note that "old" style binary is already parsed out into normal data
 	 * before this method is invoked
 	 * 
+	 * By default, this places parsed data in your document as a ByteBuffer.
+	 * 
+	 * If you want something different, you should override and parse it out 
+	 * manually.
+	 * 
 	 * @param key
 	 * @param bytes  the bytes representing the binary data.
 	 * @param subType the binary Subtype from the BSON Spec
 	 */
 	public void putBinary(String key, ByteBuffer bytes, byte subType) {
-		// TODO Auto-generated method stub
+		put(key, bytes);
 	}
+	
 	/**
 	 * Places a parsed UUID (as bytes) into the document.
 	 * 
@@ -285,7 +294,19 @@ public abstract class BSONDocumentBuilder<T> {
 	 *            Endian. if false, parse as little endian.
 	 */
 	public void putUUID(String key, ByteBuffer bytes, boolean bigEndian) {
-		// TODO Auto-generated method stub
+		long mostSig; 
+		long leastSig;
+		BSONByteBuffer buf = new BSONByteBuffer(bytes);
+		// TODO - Not sure my big endian parse is correct
+		if (bigEndian) {
+			// TODO - this is wrong
+			mostSig = buf.getIntBE(0);
+			leastSig = buf.getIntBE(8);
+		} else {
+			mostSig = buf.getLong(0);
+			leastSig = buf.getLong(8);
+		}
+		put(key, new UUID(mostSig, leastSig));
 	}
 
 	/**
@@ -297,7 +318,7 @@ public abstract class BSONDocumentBuilder<T> {
 	 *            The raw bytes representing the MD5 hash
 	 */
 	public void putMD5(String key, ByteBuffer bytes) {
-		// TODO Auto-generated method stub
+		put(key, new MD5(bytes));
 	}
 
 	private static final Logger log = Logger.getLogger("BSONDocumentBuilder");

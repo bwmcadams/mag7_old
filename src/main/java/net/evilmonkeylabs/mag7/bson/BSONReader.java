@@ -92,7 +92,6 @@ public abstract class BSONReader<T> {
 			pos.getAndAdd(_lstL);
 			break;
 		case BSON.BINARY:
-			log.info("/// Binary at : " + pos.get());
 			final int _binL = buf.getInt(pos.getAndAdd(4));
 			final byte _sT = buf.get(pos.getAndIncrement());
 			log.info("/// Binary SubType: " + _sT + " of length " + _binL);
@@ -100,22 +99,26 @@ public abstract class BSONReader<T> {
 			final byte[] _bin = new byte[_binL];
 			ByteBuffer bytes;
 			
+			log.info(BSON.dumpBytes(_bin));
 			if (_sT == BSON.BINARY_OLD) {
 				// Old format had an extra length header; parse out before passing to a simple "got Binary" method
 				bytes = buf.get(_bin, pos.addAndGet(4), 0, _binL - 4);
 			} else {
 				bytes = buf.get(_bin, pos.get(), 0, _binL);
 			}
+			log.info(BSON.dumpBytes(_bin));
 			
 			pos.getAndAdd(_binL);
 			
 			if (_sT == BSON.BINARY_UUID) {
 				if (_binL != 16)
 					throw new BSONException("Invalid UUID Length in Binary. Expected 16, got " + _binL);
+				log.info("*** NEW UUID");
 				b.putUUID(name, bytes, true);
 			} else if (_sT == BSON.BINARY_UUID_OLD) {  
 				if (_binL != 16)
 					throw new BSONException("Invalid UUID Length in Binary. Expected 16, got " + _binL);
+				log.info("*** OLD UUID");
 				b.putUUID(name, bytes, false);
 			} else if (_sT == BSON.BINARY_MD5) {
 				if (_binL != 16)

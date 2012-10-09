@@ -45,8 +45,9 @@ public class BSONByteBuffer {
 	}
 
 	public ByteBuffer get(byte[] bytes, int pos, int offset, int length) {
-		for (int i = pos + offset; i < offset + length; i++)
-         bytes[i] = buf.get(i); 
+		for (int i = offset; i < offset + length; i++) {
+			bytes[i] = buf.get(i + pos);
+		}
 		return ByteBuffer.wrap(bytes);
 	}
 
