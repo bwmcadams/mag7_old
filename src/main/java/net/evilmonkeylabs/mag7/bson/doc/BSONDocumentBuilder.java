@@ -1,6 +1,7 @@
 package net.evilmonkeylabs.mag7.bson.doc;
 
 import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.util.Date;
 import java.util.UUID;
 import java.util.logging.Logger;
@@ -294,18 +295,13 @@ public abstract class BSONDocumentBuilder<T> {
 	 *            Endian. if false, parse as little endian.
 	 */
 	public void putUUID(String key, ByteBuffer bytes, boolean bigEndian) {
-		long mostSig; 
-		long leastSig;
-		BSONByteBuffer buf = new BSONByteBuffer(bytes);
-		// TODO - Not sure my big endian parse is correct
 		if (bigEndian) {
-			// TODO - this is wrong
-			mostSig = buf.getIntBE(0);
-			leastSig = buf.getIntBE(8);
+			bytes.order(ByteOrder.BIG_ENDIAN);
 		} else {
-			mostSig = buf.getLong(0);
-			leastSig = buf.getLong(8);
+			bytes.order(ByteOrder.LITTLE_ENDIAN);
 		}
+		final long mostSig = bytes.getLong(0);
+		final long leastSig = bytes.getLong(8);
 		put(key, new UUID(mostSig, leastSig));
 	}
 
