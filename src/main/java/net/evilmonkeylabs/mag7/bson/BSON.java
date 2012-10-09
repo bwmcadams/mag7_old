@@ -33,10 +33,10 @@ public class BSON {
 	public static final byte BINARY_GENERIC = Binary.GENERIC.type;
 	public static final byte BINARY_FUNCTION = Binary.FUNCTION.type;
 	public static final byte BINARY_OLD = Binary.BINARY_OLD.type;
-	public static final byte UUID_OLD = Binary.UUID_OLD.type;
-	public static final byte UUID = Binary.UUID.type;
-	public static final byte MD5 = Binary.MD5.type;
-	public static final byte USER_DEFINED = Binary.USER_DEFINED.type;
+	public static final byte BINARY_UUID_OLD = Binary.UUID_OLD.type;
+	public static final byte BINARY_UUID = Binary.UUID.type;
+	public static final byte BINARY_MD5 = Binary.MD5.type;
+	public static final byte BINARY_USER_DEFINED = Binary.USER_DEFINED.type;
 
 	private static final int RE_GLOBAL_FLAG = 256;
 

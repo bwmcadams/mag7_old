@@ -1,5 +1,6 @@
 package net.evilmonkeylabs.mag7.bson.doc;
 
+import java.nio.ByteBuffer;
 import java.util.Date;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
@@ -259,6 +260,44 @@ public abstract class BSONDocumentBuilder<T> {
 	 */
 	public void putMaxKey(String key) {
 		put(key, BSON.MaxKey.getInstance());
+	}
+
+	/**
+	 * Places an undifferentiated binary data block into the document.
+	 * Note that "old" style binary is already parsed out into normal data
+	 * before this method is invoked
+	 * 
+	 * @param key
+	 * @param bytes  the bytes representing the binary data.
+	 * @param subType the binary Subtype from the BSON Spec
+	 */
+	public void putBinary(String key, ByteBuffer bytes, byte subType) {
+		// TODO Auto-generated method stub
+	}
+	/**
+	 * Places a parsed UUID (as bytes) into the document.
+	 * 
+	 * @param key
+	 * @param bytes
+	 *            the bytes representing the UUID
+	 * @param bigEndian
+	 *            Old MongoDB drivers/shell stored UUIDs incorrectly, as Little
+	 *            Endian. if false, parse as little endian.
+	 */
+	public void putUUID(String key, ByteBuffer bytes, boolean bigEndian) {
+		// TODO Auto-generated method stub
+	}
+
+	/**
+	 * Places a parsed MD5 Hash (as bytes) into the document.
+	 * 
+	 * 
+	 * @param key
+	 * @param bytes
+	 *            The raw bytes representing the MD5 hash
+	 */
+	public void putMD5(String key, ByteBuffer bytes) {
+		// TODO Auto-generated method stub
 	}
 
 	private static final Logger log = Logger.getLogger("BSONDocumentBuilder");
