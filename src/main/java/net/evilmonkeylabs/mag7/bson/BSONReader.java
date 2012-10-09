@@ -74,22 +74,20 @@ public abstract class BSONReader<T> {
 			break;
 		case BSON.DOCUMENT:
 			log.info("//////// OBJECT");
+			final int _subL = buf.getInt(pos.get());
 			final ByteBuffer _subBuf = buf.slice();
 			_subBuf.position(pos.get());
 			final BSONReader<T> dP = newDocumentParser(_subBuf);
 			final T doc = dP.result();
 			b.putDocument(name, doc);
-			pos.getAndSet(dP.lastPos());
+			pos.getAndAdd(_subL);
 			break;
 		case BSON.ARRAY:
 			// TODO - Let user specify custom list builder !!!
 			log.info("//////// ARRAY");
-			final ByteBuffer _subLst = buf.slice();
-			_subLst.position(pos.get());
-			final BSONReader<BSONList> lP = new DefaultBSONArrayParser(_subLst);
-			final BSONList list = lP.result();
-			b.putList(name, list);
-			pos.getAndSet(lP.lastPos());
+			final int _lstL = buf.getInt(pos.get());
+			b.putList(name, parseArray());
+			pos.getAndAdd(_lstL);
 			break;
 		case BSON.BINARY:
 			// TODO - Break out and parse Binary
@@ -177,6 +175,25 @@ public abstract class BSONReader<T> {
 		return b.result();
 	}
 
+	/**
+	 * Because we can't be terribly flexible with generics (such as abstract types)
+	 * in Java, and a List Parser is technically a Doc parser, there is no 
+	 * declared type for an embedded list. 
+	 * 
+	 * For now ,this is a bit hacky but override this to parse your list out however you want
+	 * and return an Object.  
+	 * 
+	 * TODO - Make a more elegant solution.
+	 * 
+	 * @return
+	 */
+	protected Object parseArray() {
+		final ByteBuffer _subLst = buf.slice();
+		_subLst.position(pos.get());
+		final BSONReader<BSONList> lP = new DefaultBSONArrayParser(_subLst);
+		return lP.result();
+	}
+	
 	public abstract BSONReader<T> newDocumentParser(ByteBuffer tBuf);
 
 	protected BSONDocumentBuilder<T> b;
